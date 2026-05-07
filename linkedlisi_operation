@@ -1,0 +1,108 @@
+#include "header.h"
+
+// Function to insert a new node at the end of the linked list
+void insert_at_last(Slist **head){
+
+	// Allocate memory for new node
+	Slist *new = malloc(sizeof(Slist));
+	
+	// Check if memory allocation failed
+	if(!new){
+		perror("failed");
+		return;
+	}
+
+	// Initialize new node with process details
+	new->pid = pid;				// Store process ID
+	strcpy(new->command,input_string);	// Copy command string
+	new->link = NULL;			// Last node points to NULL
+
+	// If list is empty, make new node the head
+	if(*head == NULL){
+		*head = new;
+	}else{
+
+		// Traverse to the last node
+		Slist *temp = *head;
+		
+		while(temp->link != NULL)
+			temp = temp->link;
+
+		// Link new node at the end
+		temp->link = new;
+	}
+
+}
+
+// Function to print all commands stored in the list
+void print_command_list(Slist *head){
+
+	// If list is empty, print error
+	if(head == NULL){
+		printf("ERROR: List Is Empty\n");
+		return;
+	}
+
+	Slist *Temp = head;
+	
+	int i = 1;	// Job counter
+
+	// Traverse and print each command
+	while(Temp){
+		printf("[%d] %-5s\t\t%s\n",i++,"Stopped",Temp->command);
+		Temp = Temp->link;
+	}
+
+}
+
+// Function to bring the first job in the list to foreground
+void foreground_command(Slist **head){
+	
+	// If list is empty, no job to resume
+	if(*head == NULL){
+		printf("fg: current: no such job\n");
+		return;
+	}
+
+	// Take first node 
+	Slist *temp = *head;
+
+	printf("%s\n",temp->command);
+
+	// Resume process
+	kill(temp->pid,SIGCONT);
+
+	// wait for completion
+	waitpid(temp->pid,&st,WUNTRACED);
+
+	// remove first node
+	*head = temp->link;
+	free(temp);
+
+}
+
+// Function to resume the first job in background
+void background_command(Slist **head){
+
+	// Background job counter
+	static int i = 1;
+
+	// If list is empty, no job to resume
+	if(*head == NULL){
+		printf("bg: current: no such job\n");
+		return ;
+	}
+	
+	// Take first node (job at head)
+	Slist *temp = *head;
+	
+	// Print job info with background indicator
+	printf("[%d] %-5s &\n",i++,temp->command);
+	
+	// Resume process execution in background
+	kill(temp->pid,SIGCONT);
+
+	// Remove job from list (head node)
+	*head = temp->link;	
+	free(temp);
+}
